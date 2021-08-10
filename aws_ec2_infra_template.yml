@@ -1,0 +1,89 @@
+---
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ""
+
+Resources:
+  WebServerVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/16
+      EnableDnsSupport: false
+      EnableDnsHostnames: false
+      InstanceTenancy: dedicated
+      Tags:
+       - Key: stack
+         Value: production
+  WebServerSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+       CidrBlock: 10.0.1.0/24
+       MapPublicIpOnLaunch: true
+       VpcId:
+         Ref: WebServerVPC
+  WebServerInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+      - Key: stack
+        Value: production
+  WebserverIGWandVPCAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId:
+        Ref: WebServerInternetGateway
+      VpcId:
+        Ref: WebServerVPC
+  
+  WebServerRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId:  
+        Ref: WebServerVPC
+      Tags:
+      - Key: stack
+        Value: production
+        
+  WebServerSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId:
+        Ref: WebServerRouteTable
+      SubnetId:
+        Ref: WebServerSubnet
+        
+  WebServerRoute:
+    Type: AWS::EC2::Route
+    DependsOn: WebServerInternetGateway
+    Properties:
+       RouteTableId:
+         Ref: WebServerRouteTable
+       DestinationCidrBlock: 0.0.0.0/0
+       GatewayId:
+         Ref: WebServerInternetGateway
+  
+  WebServerEC2LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-083ac7c7ecf9bb9b0
+        InstanceType: t3.micro
+        KeyName: test_key_pair
+        NetworkInterfaces:
+          - SubnetId:
+              Ref: WebServerSubnet
+      LaunchTemplateName: WebServerEC2LaunchTemplate
+  
+  WebServerEC2Fleet:
+    Type: AWS::EC2::EC2Fleet
+    DependsOn: WebServerEC2LaunchTemplate
+    Properties:
+      LaunchTemplateConfigs:
+        - LaunchTemplateSpecification:
+            LaunchTemplateName: WebServerEC2LaunchTemplate
+            Version: !GetAtt WebServerEC2LaunchTemplate.LatestVersionNumber
+      TargetCapacitySpecification:
+        TotalTargetCapacity: 2
+        OnDemandTargetCapacity: 1
+        SpotTargetCapacity: 0
+        DefaultTargetCapacityType: on-demand
+        
