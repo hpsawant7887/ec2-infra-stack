@@ -110,4 +110,4 @@ Resources:
         LaunchTemplateId: !Ref WebServerEC2LaunchTemplate
         Version: !Ref LaunchTemplateVersionNumber
       VPCZoneIdentifier:
-        Ref: WebServerSubnet
+        - Ref: WebServerSubnet
