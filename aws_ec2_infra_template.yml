@@ -94,7 +94,7 @@ Resources:
         NetworkInterfaces:
           - DeviceIndex: 0
             Groups:
-              Ref: InstanceSecurityGroup
+              - Ref: InstanceSecurityGroup
             SubnetId:
               Ref: WebServerSubnet
             DeleteOnTermination: true
