@@ -68,6 +68,20 @@ Resources:
        DestinationCidrBlock: 0.0.0.0/0
        GatewayId:
          Ref: WebServerInternetGateway
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Open HTTP (port 80) and SSH (port 22)
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
 
   WebServerEC2LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
@@ -77,8 +91,12 @@ Resources:
         InstanceType: t3.micro
         KeyName: test_key_pair
         NetworkInterfaces:
-          - SubnetId:
+          - DeviceIndex: 0
+            Groups:
+              Ref: InstanceSecurityGroup
+            SubnetId:
               Ref: WebServerSubnet
+            DeleteOnTermination: true
       LaunchTemplateName: WebServerEC2LaunchTemplate
 
   AutoScalingGroup:
@@ -91,4 +109,4 @@ Resources:
         LaunchTemplateId: !Ref WebServerEC2LaunchTemplate
         Version: !Ref LaunchTemplateVersionNumber
       VPCZoneIdentifier:
-        - !Ref WebServerSubnet
+        Ref: WebServerSubnet
