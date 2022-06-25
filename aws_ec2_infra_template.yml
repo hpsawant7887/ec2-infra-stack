@@ -3,6 +3,10 @@ AWSTemplateFormatVersion: "2010-09-09"
 Description: ""
 
 Resources:
+  LaunchTemplateVersionNumber:
+    Default: 1
+    Type: String
+
   WebServerVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -13,6 +17,7 @@ Resources:
       Tags:
        - Key: stack
          Value: production
+
   WebServerSubnet:
     Type: AWS::EC2::Subnet
     Properties:
@@ -20,12 +25,14 @@ Resources:
        MapPublicIpOnLaunch: true
        VpcId:
          Ref: WebServerVPC
+
   WebServerInternetGateway:
     Type: AWS::EC2::InternetGateway
     Properties:
       Tags:
       - Key: stack
         Value: production
+
   WebserverIGWandVPCAttachment:
     Type: AWS::EC2::VPCGatewayAttachment
     Properties:
@@ -33,16 +40,16 @@ Resources:
         Ref: WebServerInternetGateway
       VpcId:
         Ref: WebServerVPC
-  
+
   WebServerRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
-      VpcId:  
+      VpcId:
         Ref: WebServerVPC
       Tags:
       - Key: stack
         Value: production
-        
+
   WebServerSubnetRouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
@@ -50,7 +57,7 @@ Resources:
         Ref: WebServerRouteTable
       SubnetId:
         Ref: WebServerSubnet
-        
+
   WebServerRoute:
     Type: AWS::EC2::Route
     DependsOn: WebServerInternetGateway
@@ -60,7 +67,7 @@ Resources:
        DestinationCidrBlock: 0.0.0.0/0
        GatewayId:
          Ref: WebServerInternetGateway
-  
+
   WebServerEC2LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
     Properties:
@@ -72,18 +79,16 @@ Resources:
           - SubnetId:
               Ref: WebServerSubnet
       LaunchTemplateName: WebServerEC2LaunchTemplate
-  
-  WebServerEC2Fleet:
-    Type: AWS::EC2::EC2Fleet
-    DependsOn: WebServerEC2LaunchTemplate
+
+
+  AutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      LaunchTemplateConfigs:
-        - LaunchTemplateSpecification:
-            LaunchTemplateName: WebServerEC2LaunchTemplate
-            Version: !GetAtt WebServerEC2LaunchTemplate.LatestVersionNumber
-      TargetCapacitySpecification:
-        TotalTargetCapacity: 2
-        OnDemandTargetCapacity: 1
-        SpotTargetCapacity: 0
-        DefaultTargetCapacityType: on-demand
-        
+      MinSize: '2'
+      MaxSize: '5'
+      DesiredCapacity: '3'
+      LaunchTemplate:
+        LaunchTemplateId: !Ref WebServerEC2LaunchTemplate
+        Version: !Ref LaunchTemplateVersionNumber
+      VPCZoneIdentifier:
+        - !Ref WebServerSubnet
