@@ -2,11 +2,12 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ""
 
-Resources:
+Parameters:
   LaunchTemplateVersionNumber:
     Default: 1
     Type: String
 
+Resources:
   WebServerVPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -79,7 +80,6 @@ Resources:
           - SubnetId:
               Ref: WebServerSubnet
       LaunchTemplateName: WebServerEC2LaunchTemplate
-
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
