@@ -1,3 +1,5 @@
+# https://aws.amazon.com/premiumsupport/knowledge-center/install-codedeploy-agent-cfn-init/
+# https://stackoverflow.com/questions/54691327/cfn-init-for-cloudformation-launchtemplate
 ---
 AWSTemplateFormatVersion: "2010-09-09"
 Description: ""
@@ -86,6 +88,33 @@ Resources:
 
   WebServerEC2LaunchTemplate:
     Type: AWS::EC2::LaunchTemplate
+    Metadata:
+      AWS::CloudFormation::Init:
+        config:
+          packages:
+            yum:
+              ruby: []
+          files:
+            /home/ec2-user/install:
+              source:
+                Fn::Join:
+                  - ''
+                  - - https://aws-codedeploy-
+                    - Ref: AWS::Region
+                    - .s3.amazonaws.com/latest/install
+              mode: '000755'
+          commands:
+            00-install-agent:
+              command: ./install auto
+              cwd: /home/ec2-user/
+            01-cfn-signal:
+              command:
+                Fn::Join:
+                  - ''
+                  - - '/opt/aws/bin/cfn-signal -e 0 --stack '
+                    - Ref: AWS::StackName
+                    - ' --resource WebServerEC2LaunchTemplate --region '
+                    - Ref: AWS::Region
     Properties:
       LaunchTemplateData:
         ImageId: ami-083ac7c7ecf9bb9b0
@@ -98,6 +127,23 @@ Resources:
             SubnetId:
               Ref: WebServerSubnet
             DeleteOnTermination: true
+        UserData:
+          Fn::Base64:
+            Fn::Join:
+              - ''
+              - - |
+                  #!/bin/bash
+                - |
+                  yum -y update
+                - |
+                  yum -y install cfn-bootstrap
+                - /opt/aws/bin/cfn-init -v
+                - ' --stack '
+                - Ref: AWS::StackName
+                - ' --resource WebServerEC2LaunchTemplate'
+                - ' --region '
+                - Ref: AWS::Region
+                - |+
       LaunchTemplateName: WebServer_EC2_LaunchTemplate
 
   AutoScalingGroup:
