@@ -68,11 +68,12 @@ Resources:
        DestinationCidrBlock: 0.0.0.0/0
        GatewayId:
          Ref: WebServerInternetGateway
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
       GroupDescription: Open HTTP (port 80) and SSH (port 22)
-      VpcId: !Ref VPC
+      VpcId: !Ref WebServerVPC
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 80
@@ -97,7 +98,7 @@ Resources:
             SubnetId:
               Ref: WebServerSubnet
             DeleteOnTermination: true
-      LaunchTemplateName: WebServerEC2LaunchTemplate
+      LaunchTemplateName: WebServer_EC2_LaunchTemplate
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
